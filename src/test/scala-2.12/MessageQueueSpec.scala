@@ -3,6 +3,7 @@ import org.specs2.mutable.Specification
 class MessageQueueSpec extends Specification {
 
   val CONTENT = "a message"
+  val ANOTHER_CONTENT = "another message"
 
   "MessageQueue" should {
 
@@ -25,6 +26,15 @@ class MessageQueueSpec extends Specification {
       val receivedMessage = queue.receiveMessage()
       queue.deleteMessage(receivedMessage.get.id)
       queue.receiveMessage() must beNone
+    }
+
+    "return first visible message from queue" in {
+      val queue = new MessageQueue()
+      queue.sendMessage(CONTENT)
+      queue.sendMessage(ANOTHER_CONTENT)
+      queue.receiveMessage()
+      val secondReceivedMessage = queue.receiveMessage()
+      secondReceivedMessage.get.content must contain(ANOTHER_CONTENT)
     }
   }
 }

@@ -10,26 +10,32 @@ class MessageQueue {
 
   // SendMessage: Send messages to the queue
   def sendMessage(content: String): Unit = {
-    receivedMessages += 1
-    queue = queue :+ Message(receivedMessages, content)
+    synchronized { // actor model could be an alternative, but probably overkill
+      receivedMessages += 1
+      queue = queue :+ Message(receivedMessages, content)
+    }
   }
 
   // ReceiveMessage: Return one or more messages from the queue.
   def receiveMessage(): Option[Message] = {
-    val firstVisible = queue.find(msg => !invisibleLog.contains(msg.id))
-    firstVisible match {
-      case None => None
-      case Some(msg) => {
-        invisibleLog = invisibleLog + msg.id
-        Some(msg)
+    synchronized { // actor model could be an alternative, but probably overkill
+      val firstVisible = queue.find(msg => !invisibleLog.contains(msg.id))
+      firstVisible match {
+        case None => None
+        case Some(msg) => {
+          invisibleLog = invisibleLog + msg.id
+          Some(msg)
+        }
       }
     }
   }
 
   // DeleteMessage: Remove a previously received message from the queue.
   def deleteMessage(id: Int): Unit = {
-    invisibleLog = invisibleLog.filter(_ != id)
-    queue = queue.filter(_.id != id)
+    synchronized { // actor model could be an alternative, but probably overkill
+      invisibleLog = invisibleLog.filter(_ != id)
+      queue = queue.filter(_.id != id)
+    }
   }
 
 }

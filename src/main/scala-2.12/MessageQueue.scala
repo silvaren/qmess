@@ -1,7 +1,7 @@
 
 case class Message(id: Int, content: String)
 
-class MessageQueue {
+class MessageQueue(val capacity: Int = 100000) {
 
   // need to be mutable to work the requests
   private[this] var receivedMessages = 0
@@ -9,10 +9,15 @@ class MessageQueue {
   private[this] var invisibleLog = Set[Int]()
 
   // SendMessage: Send messages to the queue
-  def sendMessage(content: String): Unit = {
-    synchronized { // actor model could be an alternative, but probably overkill
-      receivedMessages += 1
-      queue = queue :+ Message(receivedMessages, content)
+  def sendMessage(content: String): Either[String, Int] = {
+    synchronized {
+      // actor model could be an alternative, but probably overkill
+      if (queue.size == capacity) Left("Queue is full!")
+      else {
+        receivedMessages += 1
+        queue = queue :+ Message(receivedMessages, content)
+        Right(receivedMessages)
+      }
     }
   }
 

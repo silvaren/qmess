@@ -36,5 +36,12 @@ class MessageQueueSpec extends Specification {
       val secondReceivedMessage = queue.receiveMessage()
       secondReceivedMessage.get.content must contain(ANOTHER_CONTENT)
     }
+
+    "not allow sending more messages than capacity" in {
+      val queue = new MessageQueue(2)
+      queue.sendMessage(CONTENT) must beRight(1)
+      queue.sendMessage(CONTENT) must beRight(2)
+      queue.sendMessage(ANOTHER_CONTENT) must beLeft
+    }
   }
 }

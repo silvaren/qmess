@@ -43,5 +43,13 @@ class MessageQueueSpec extends Specification {
       queue.sendMessage(CONTENT) must beRight(2)
       queue.sendMessage(ANOTHER_CONTENT) must beLeft
     }
+
+    "make messages visible after visibility timeout" in {
+      val queue = new MessageQueue(2,0)
+      queue.sendMessage(CONTENT)
+      queue.sendMessage(ANOTHER_CONTENT)
+      queue.receiveMessage()
+      queue.receiveMessage().get.content must contain(CONTENT)
+    }
   }
 }

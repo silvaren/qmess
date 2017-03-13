@@ -1,12 +1,13 @@
 
 case class Message(id: Int, content: String)
+case class InvisibilityStart(id: Int, startTime: Long)
 
-class MessageQueue(val capacity: Int = 100000) {
+class MessageQueue(val capacity: Int = 100000, val visibilityTimeout: Int = 60) {
 
   // need to be mutable to work the requests
   private[this] var receivedMessages = 0
   private[this] var queue = Seq[Message]()
-  private[this] var invisibleLog = Set[Int]()
+  private[this] var invisibleLog = Set[InvisibilityStart]()
 
   // SendMessage: Send messages to the queue
   def sendMessage(content: String): Either[String, Int] = {
@@ -21,14 +22,20 @@ class MessageQueue(val capacity: Int = 100000) {
     }
   }
 
+  private def isVisible(msg: Message): Boolean = invisibleLog.find(_.id == msg.id) match {
+    case None => true
+    case Some(invisibilityStart) =>
+      System.currentTimeMillis() - (invisibilityStart.startTime + visibilityTimeout * 1000) > 0
+  }
+
   // ReceiveMessage: Return one or more messages from the queue.
   def receiveMessage(): Option[Message] = {
     synchronized { // actor model could be an alternative, but probably overkill
-      val firstVisible = queue.find(msg => !invisibleLog.contains(msg.id))
+      val firstVisible = queue.find(isVisible)
       firstVisible match {
         case None => None
         case Some(msg) => {
-          invisibleLog = invisibleLog + msg.id
+          invisibleLog = invisibleLog + InvisibilityStart(msg.id, System.currentTimeMillis())
           Some(msg)
         }
       }

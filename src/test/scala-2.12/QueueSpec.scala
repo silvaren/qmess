@@ -10,7 +10,13 @@ class QueueSpec extends Specification {
       val queue = new Queue()
       queue.sendMessage(Message(CONTENT))
       val receivedMessage = queue.receiveMessage()
-      receivedMessage.content must contain(CONTENT)
+      receivedMessage.get.content must contain(CONTENT)
+    }
+
+    "retrieve from empty queue returns no message" in {
+      val queue = new Queue()
+      val receivedMessage = queue.receiveMessage()
+      receivedMessage must beNone
     }
   }
 }
